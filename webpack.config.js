@@ -1,7 +1,6 @@
 const path = require('path');
 const HtmlwebpackPlugin = require('html-webpack-plugin');
 
-
 const merge = require('webpack-merge');
 const TARGET = process.env.npm_lifecycle_event;
 
@@ -12,11 +11,20 @@ const PATHS = {
 
 const webpack = require('webpack');
 
+process.env.BABEL_ENV = TARGET;
+
 const common = {
 
   // Entry accepts a path or an object of entries.
   // The build chapter contains an example of the latter.
   entry: PATHS.app,
+
+  // Add resolve.extensions. '' is needed to allow imports
+  // without an extension. Note the .'s before extensions!!!
+  // The matching will fail without!
+  resolve: {
+    extensions: ['', '.js', '.jsx']
+  },
   output: {
     path: PATHS.build,
     filename: 'bundle.js'
@@ -29,12 +37,23 @@ const common = {
         loaders: ['style', 'css'],
         // Include accepts either a path or an array of paths.
         include: PATHS.app
+      },
+      // Set up jsx. This accepts js too thanks to RegExp
+      {
+        test: /\.jsx?$/,
+        // Enable caching for improved performance during development
+        // It uses default OS directory by default. If you need something
+        // more custom, pass a path to it. I.e., babel?cacheDirectory=<path>
+        loaders: ['babel?cacheDirectory'],
+        include: PATHS.app
       }
     ]
   },
   plugins: [
     new HtmlwebpackPlugin({
-      title: 'Kanban app'
+      template: 'node_modules/html-webpack-template/index.html',
+      title: 'Kanban app',
+      appMountId: 'app'
     })
   ]
 };
@@ -45,7 +64,7 @@ if(TARGET === 'start' || !TARGET) {
   module.exports = merge(common, {
     devtool: 'eval-source-map',
     devServer: {
-      historyApiFallback: true,    
+      historyApiFallback: true,
       hot: true,
       inline: true,
       progress: true,
